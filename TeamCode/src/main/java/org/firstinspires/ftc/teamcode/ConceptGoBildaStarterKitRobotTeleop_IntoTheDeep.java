@@ -102,13 +102,14 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
     as far from the starting position, decrease it. */
 
     final double ARM_COLLAPSED_INTO_ROBOT  = 0;
-    final double ARM_COLLECT               = 230 * ARM_TICKS_PER_DEGREE;
+    final double ARM_COLLECT               = 212 * ARM_TICKS_PER_DEGREE;
     final double ARM_CLEAR_BARRIER         = 230 * ARM_TICKS_PER_DEGREE;
-    final double ARM_SCORE_SPECIMEN        = 100 * ARM_TICKS_PER_DEGREE;
+    final double ARM_SCORE_SPECIMEN        = 110 * ARM_TICKS_PER_DEGREE;
     final double ARM_SCORE_SAMPLE_IN_LOW   = 160 * ARM_TICKS_PER_DEGREE;
     final double ARM_ATTACH_HANGING_HOOK   = 120 * ARM_TICKS_PER_DEGREE;
-    final double ARM_WINCH_ROBOT           = 15  * ARM_TICKS_PER_DEGREE;
-
+    final double ARM_WINCH_ROBOT           = 0  * ARM_TICKS_PER_DEGREE;
+    final int LINEARSLIDE_IN            = 0;
+    final int LINEARSLIDE_OUT           = 2000;
     /* Variables to store the speed the intake servo should be set at to intake, and deposit game elements. */
     final double INTAKE_COLLECT    = -1.0;
     final double INTAKE_OFF        =  0.0;
@@ -116,7 +117,7 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
 
     /* Variables to store the positions that the wrist should be set to when folding in, or folding out. */
     final double WRIST_FOLDED_IN   = 0.5;
-    final double WRIST_FOLDED_OUT  = 0.1667;
+    final double WRIST_FOLDED_OUT  = 0.19;
 
     /* A number in degrees that the triggers can adjust the arm position by */
     final double FUDGE_FACTOR = 15 * ARM_TICKS_PER_DEGREE;
@@ -171,32 +172,46 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
             drive.drive(forward, right, rotate);
 
             if (gamepad1.x) {
-                armPosition = ARM_SCORE_SPECIMEN;
+                if (linearSlide.getTargetPosition() == LINEARSLIDE_IN) {
+                    armPosition = ARM_SCORE_SPECIMEN;
+
+                }
+
             }
             else if (gamepad1.y) {
-                armPosition = ARM_COLLECT;
+                if (linearSlide.getTargetPosition() == LINEARSLIDE_IN){
+                    armPosition = ARM_COLLECT;
+                }
+
             }
             else if (gamepad1.a) {
+
             }
             else if (gamepad1.b) {
-            }
+                if (wrist.getPosition()== WRIST_FOLDED_OUT) {
+
+                    if (linearSlide.getTargetPosition() == LINEARSLIDE_OUT){
+                        linearSlide.setTargetPosition( LINEARSLIDE_IN);
+                        linearSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                        linearSlide.setPower(1.0);
+                    }
+                    else {
+                        linearSlide.setTargetPosition(LINEARSLIDE_OUT);
+                        linearSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                        linearSlide.setPower(1.0);
+                    }
+                }
+                    }
+
             else if (gamepad1.start){
-                armPosition = ARM_COLLAPSED_INTO_ROBOT;
-                wrist.setPosition(WRIST_FOLDED_IN);
-                intake.setPower(INTAKE_OFF);
+                if (linearSlide.getTargetPosition() == LINEARSLIDE_IN) {
+                    armPosition = ARM_COLLAPSED_INTO_ROBOT;
+                    wrist.setPosition(WRIST_FOLDED_IN);
+                    intake.setPower(INTAKE_OFF);
+                }
             }
 
-            //  if (linearSlide.getTargetPosition() == 2000){
-            //      linearSlide.setTargetPosition(0);
-            //      linearSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            //      linearSlide.setPower(1.0);
-            //  }
-            //  else {
-            //      linearSlide.setTargetPosition(2000);
-            //      linearSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            //      linearSlide.setPower(1.0);
-            //      intake.setPower(INTAKE_DEPOSIT);
-            //  }
+
 
             /* Here we create a "fudge factor" for the arm position.
             This allows you to adjust (or "fudge") the arm position slightly with the gamepad triggers.
@@ -235,8 +250,14 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
             else if (gamepad1.dpad_right){
             }
             else if (gamepad1.dpad_up){
+                if (linearSlide.getTargetPosition() == LINEARSLIDE_IN) {
+                    armPosition = ARM_ATTACH_HANGING_HOOK;
+                }
             }
             else if (gamepad1.dpad_down){
+                if (linearSlide.getTargetPosition() == LINEARSLIDE_IN){
+                    armPosition = ARM_WINCH_ROBOT;
+                }
             }
 
             /* Here we set the target position of our arm to match the variable that was selected
@@ -256,6 +277,7 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
             telemetry.addData("armTarget: ", armMotor.getTargetPosition());
             telemetry.addData("arm Encoder: ", armMotor.getCurrentPosition());
             telemetry.update();
+
 
         }
     }
