@@ -104,12 +104,13 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
     final double ARM_COLLAPSED_INTO_ROBOT  = 0;
     final double ARM_COLLECT               = 212 * ARM_TICKS_PER_DEGREE;
     final double ARM_CLEAR_BARRIER         = 230 * ARM_TICKS_PER_DEGREE;
-    final double ARM_SCORE_SPECIMEN        = 110 * ARM_TICKS_PER_DEGREE;
+    final double ARM_SCORE_SPECIMEN        = 112 * ARM_TICKS_PER_DEGREE;
     final double ARM_SCORE_SAMPLE_IN_LOW   = 160 * ARM_TICKS_PER_DEGREE;
     final double ARM_ATTACH_HANGING_HOOK   = 120 * ARM_TICKS_PER_DEGREE;
     final double ARM_WINCH_ROBOT           = 0  * ARM_TICKS_PER_DEGREE;
-    final int LINEARSLIDE_IN            = 0;
-    final int LINEARSLIDE_OUT           = 2000;
+    final int LINEARSLIDE_IN            = 5;
+    final int LINEARSLIDE_OUT           = 2200;
+    boolean buttonIsReleased = true;
     /* Variables to store the speed the intake servo should be set at to intake, and deposit game elements. */
     final double INTAKE_COLLECT    = -1.0;
     final double INTAKE_OFF        =  0.0;
@@ -171,47 +172,66 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
 
             drive.drive(forward, right, rotate);
 
-            if (gamepad1.x) {
-                if (linearSlide.getTargetPosition() == LINEARSLIDE_IN) {
+            if (gamepad1.x)
+            {
+               if (linearSlide.getPower() == 0.0)
+               {
                     armPosition = ARM_SCORE_SPECIMEN;
-
-                }
-
+               }
             }
-            else if (gamepad1.y) {
-                if (linearSlide.getTargetPosition() == LINEARSLIDE_IN){
+            else if (gamepad1.y)
+            {
+                if (linearSlide.getPower() == 0.0)
+                {
                     armPosition = ARM_COLLECT;
                 }
+            }
+            else if (gamepad1.a)
+            {
 
             }
-            else if (gamepad1.a) {
-
-            }
-            else if (gamepad1.b) {
-                if (wrist.getPosition()== WRIST_FOLDED_OUT) {
-
-                    if (linearSlide.getTargetPosition() == LINEARSLIDE_OUT){
+            else if (gamepad1.b)
+            {
+                if ((wrist.getPosition()== WRIST_FOLDED_OUT) && (armPosition== ARM_SCORE_SPECIMEN))
+                {
+                    if ((linearSlide.getTargetPosition() == LINEARSLIDE_OUT ) && !linearSlide.isBusy())
+                    {
                         linearSlide.setTargetPosition( LINEARSLIDE_IN);
                         linearSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                         linearSlide.setPower(1.0);
                     }
-                    else {
+                    else if (!linearSlide.isBusy())
+                    {
                         linearSlide.setTargetPosition(LINEARSLIDE_OUT);
                         linearSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                         linearSlide.setPower(1.0);
                     }
                 }
-                    }
+            }
 
-            else if (gamepad1.start){
-                if (linearSlide.getTargetPosition() == LINEARSLIDE_IN) {
+            else if (gamepad1.start)
+            {
+                if (linearSlide.getPower() == 0.0)
+                {
                     armPosition = ARM_COLLAPSED_INTO_ROBOT;
-                    wrist.setPosition(WRIST_FOLDED_IN);
-                    intake.setPower(INTAKE_OFF);
+                    //wrist.setPosition(WRIST_FOLDED_IN);
+                    //intake.setPower(INTAKE_OFF);
                 }
             }
 
-
+            if (!linearSlide.isBusy())
+            {
+                if (linearSlide.getTargetPosition() == LINEARSLIDE_IN)
+                {
+                    linearSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    linearSlide.setPower(0.0);
+                    linearSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                }
+                else if (linearSlide.getTargetPosition() == LINEARSLIDE_OUT)
+                {
+                    linearSlide.setPower(0.5);
+                }
+            }
 
             /* Here we create a "fudge factor" for the arm position.
             This allows you to adjust (or "fudge") the arm position slightly with the gamepad triggers.
@@ -223,39 +243,37 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
 
             armPositionFudgeFactor = FUDGE_FACTOR * (gamepad1.right_trigger + (-gamepad1.left_trigger));
 
-            /* Here we implement a set of if else loops to set our arm to different scoring positions.
-            We check to see if a specific button is pressed, and then move the arm (and sometimes
-            intake and wrist) to match. For example, if we click the right bumper we want the robot
-            to start collecting. So it moves the armPosition to the ARM_COLLECT position,
-            it folds out the wrist to make sure it is in the correct orientation to intake, and it
-            turns the intake on to the COLLECT mode.*/
 
-            if(gamepad1.right_bumper){
-                if( intake.getPower()==INTAKE_DEPOSIT) {
-                    intake.setPower(INTAKE_OFF);
-                }else {
-                    intake.setPower(INTAKE_DEPOSIT);
-                }
+            if(gamepad1.right_bumper)
+            {
+                intake.setPower(INTAKE_DEPOSIT);
             }
-            else if (gamepad1.left_bumper){
-                if( intake.getPower()==INTAKE_COLLECT) {
-                    intake.setPower(INTAKE_OFF);
-                }else {
-                    intake.setPower(INTAKE_COLLECT);
-                }
+            else if(gamepad1.left_bumper)
+            {
+                intake.setPower(INTAKE_COLLECT);
+            }
+            else
+            {
+                intake.setPower(INTAKE_OFF);
             }
 
-            if (gamepad1.dpad_left) {
+            if (gamepad1.dpad_left)
+            {
             }
-            else if (gamepad1.dpad_right){
+            else if (gamepad1.dpad_right)
+            {
             }
-            else if (gamepad1.dpad_up){
-                if (linearSlide.getTargetPosition() == LINEARSLIDE_IN) {
+            else if (gamepad1.dpad_up)
+            {
+                if (linearSlide.getPower() == 0.0)
+                {
                     armPosition = ARM_ATTACH_HANGING_HOOK;
                 }
             }
-            else if (gamepad1.dpad_down){
-                if (linearSlide.getTargetPosition() == LINEARSLIDE_IN){
+            else if (gamepad1.dpad_down)
+            {
+                if (linearSlide.getPower() == 0.0)
+                {
                     armPosition = ARM_WINCH_ROBOT;
                 }
             }
@@ -265,9 +283,13 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
             We also set the target velocity (speed) the motor runs at, and use setMode to run it.*/
             armMotor.setTargetPosition((int) (armPosition +armPositionFudgeFactor));
 
-            ((DcMotorEx) armMotor).setVelocity(2100);
-            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
+            if ((armPosition == ARM_COLLAPSED_INTO_ROBOT) && !armMotor.isBusy()) {
+                armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            }
+            else {
+                ((DcMotorEx) armMotor).setVelocity(2100);
+                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            }
             /* Check to see if our arm is over the current limit, and report via telemetry. */
             if (((DcMotorEx) armMotor).isOverCurrent()){
                 telemetry.addLine("MOTOR EXCEEDED CURRENT LIMIT!");
@@ -275,7 +297,10 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
 
             /* send telemetry to the driver of the arm's current position and target position */
             telemetry.addData("armTarget: ", armMotor.getTargetPosition());
+            telemetry.addData("IsBusy: ", linearSlide.isBusy());
+            telemetry.addData("slidePower: ", linearSlide.getPower());
             telemetry.addData("arm Encoder: ", armMotor.getCurrentPosition());
+            telemetry.addData("intakePower", intake.getPower());
             telemetry.update();
 
 
