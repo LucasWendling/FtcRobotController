@@ -67,10 +67,10 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
  * The intake wheels are powered by a goBILDA Speed Servo (2000-0025-0003) in Continuous Rotation mode.
  */
 
-
-@TeleOp(name="FTC Starter Kit Example Robot (INTO THE DEEP)", group="Robot")
+/* 21115 */
+@TeleOp(name="FTC 21115 Into The Deep Teleop", group="Robot")
 //@Disabled
-public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMode {
+public class Team21115RobotTeleop_IntoTheDeep extends LinearOpMode {
 
     /* Declare OpMode members. */
     public DcMotor  armMotor    = null; //the arm motor
@@ -102,14 +102,14 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
     as far from the starting position, decrease it. */
 
     final double ARM_COLLAPSED_INTO_ROBOT  = 0;
-    final double ARM_COLLECT               = 212 * ARM_TICKS_PER_DEGREE;
+    final double ARM_COLLECT               = 218 * ARM_TICKS_PER_DEGREE;
     final double ARM_CLEAR_BARRIER         = 230 * ARM_TICKS_PER_DEGREE;
     final double ARM_SCORE_SPECIMEN        = 112 * ARM_TICKS_PER_DEGREE;
     final double ARM_SCORE_SAMPLE_IN_LOW   = 160 * ARM_TICKS_PER_DEGREE;
     final double ARM_ATTACH_HANGING_HOOK   = 120 * ARM_TICKS_PER_DEGREE;
-    final double ARM_WINCH_ROBOT           = 0  * ARM_TICKS_PER_DEGREE;
+    final double ARM_WINCH_ROBOT           = 1  * ARM_TICKS_PER_DEGREE;
     final int LINEARSLIDE_IN            = 5;
-    final int LINEARSLIDE_OUT           = 2200;
+    final int LINEARSLIDE_OUT           = 2450;
     boolean buttonIsReleased = true;
     /* Variables to store the speed the intake servo should be set at to intake, and deposit game elements. */
     final double INTAKE_COLLECT    = -1.0;
@@ -121,15 +121,21 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
     final double WRIST_FOLDED_OUT  = 0.19;
 
     /* A number in degrees that the triggers can adjust the arm position by */
-    final double FUDGE_FACTOR = 15 * ARM_TICKS_PER_DEGREE;
+    final double FUDGE_FACTOR = 25 * ARM_TICKS_PER_DEGREE;
 
     /* Variables that are used to set the arm to a specific position */
     double armPosition = (int)ARM_COLLAPSED_INTO_ROBOT;
     double armPositionFudgeFactor;
+    //ArmPIDController ArmPID = new ArmPIDController(0.1,0.0,0.3, 0.1);
+    //ArmPIDController ArmPID = new ArmPIDController(0.08,0.0,1, 0.14);
+    //ArmPIDController ArmPID = new ArmPIDController(0.03,0.0,0.0, 0.15);
+    ArmPIDController ArmPID = new ArmPIDController(0.015,0.0,0.0, 0.15);
 
 
     @Override
     public void runOpMode() {
+        double armPower=0;
+
         drive.init(hardwareMap);
         /* Define and Initialize Motors */
         armMotor   = hardwareMap.get(DcMotor.class, "left_arm"); //the arm motor
@@ -137,18 +143,19 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
         linearSlide.setDirection(DcMotorSimple.Direction.REVERSE);
         linearSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
         ((DcMotorEx) armMotor).setCurrentAlert(5,CurrentUnit.AMPS);
 
-
         /* Before starting the armMotor. We'll make sure the TargetPosition is set to 0.
         Then we'll set the RunMode to RUN_TO_POSITION. And we'll ask it to stop and reset encoder.
         If you do not have the encoder plugged into this motor, it will not run in this code. */
-        armMotor.setTargetPosition(0);
-        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        armMotor.setTargetPosition(0);
+//        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         /* Define and initialize servos.*/
         intake = hardwareMap.get(CRServo.class, "intake");
@@ -169,6 +176,7 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
             double forward = -gamepad1.left_stick_y;
             double right = gamepad1.left_stick_x;
             double rotate = gamepad1.right_stick_x;
+            boolean update = true;
 
             drive.drive(forward, right, rotate);
 
@@ -214,8 +222,6 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
                 if (linearSlide.getPower() == 0.0)
                 {
                     armPosition = ARM_COLLAPSED_INTO_ROBOT;
-                    //wrist.setPosition(WRIST_FOLDED_IN);
-                    //intake.setPower(INTAKE_OFF);
                 }
             }
 
@@ -226,6 +232,8 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
                     linearSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                     linearSlide.setPower(0.0);
                     linearSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                    /* Try below code */
+                    linearSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
                 }
                 else if (linearSlide.getTargetPosition() == LINEARSLIDE_OUT)
                 {
@@ -278,32 +286,68 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
                 }
             }
 
-            /* Here we set the target position of our arm to match the variable that was selected
-            by the driver.
-            We also set the target velocity (speed) the motor runs at, and use setMode to run it.*/
-            armMotor.setTargetPosition((int) (armPosition +armPositionFudgeFactor));
+//            armMotor.setTargetPosition((int) (armPosition +armPositionFudgeFactor));
 
-            if ((armPosition == ARM_COLLAPSED_INTO_ROBOT) && !armMotor.isBusy()) {
-                armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//            if ((armPosition == ARM_COLLAPSED_INTO_ROBOT) && !armMotor.isBusy()) {
+//                armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//            }
+//            else {
+//                ((DcMotorEx) armMotor).setVelocity(2100);
+//                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//            }
+
+            if (gamepad1.a)
+            {
+                //armPower = armPower-.001;
+                //ArmPID.updateKpKd(0.015, 3);
+                //armPosition = 212 * 19.7924893140647;
             }
             else {
-                ((DcMotorEx) armMotor).setVelocity(2100);
-                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                //ArmPID.updateKpKd(0.015,0);
+                //armPosition = 212 * 19.7924893140647;
             }
+
+            armPower = ArmPID.update((armPosition+armPositionFudgeFactor), armMotor.getCurrentPosition());
+
+            if (armPosition == ARM_WINCH_ROBOT)
+            {
+
+                {
+                    armPower = -1;
+                }
+            }
+            armMotor.setPower(armPower);
+
             /* Check to see if our arm is over the current limit, and report via telemetry. */
             if (((DcMotorEx) armMotor).isOverCurrent()){
                 telemetry.addLine("MOTOR EXCEEDED CURRENT LIMIT!");
             }
 
             /* send telemetry to the driver of the arm's current position and target position */
-            telemetry.addData("armTarget: ", armMotor.getTargetPosition());
-            telemetry.addData("IsBusy: ", linearSlide.isBusy());
-            telemetry.addData("slidePower: ", linearSlide.getPower());
-            telemetry.addData("arm Encoder: ", armMotor.getCurrentPosition());
-            telemetry.addData("intakePower", intake.getPower());
+            //telemetry.addData("armTarget: ", armMotor.getTargetPosition());
+            //telemetry.addData("IsBusy: ", linearSlide.isBusy());
+            //telemetry.addData("slidePower: ", linearSlide.getPower());
+            //telemetry.addData("arm Encoder: ", armMotor.getCurrentPosition());
+            //telemetry.addData("intakePower", intake.getPower());
+            telemetry.addData("ArmPower:", armMotor.getPower());
+            //telemetry.addData("KpTerm:", ArmPID.getKpTerm());
+            //telemetry.addData("KdTerm:", ArmPID.getKdTerm());
+            //telemetry.addData("FfTerm:", ArmPID.getFfTerm());
+            telemetry.addData("ArmPos:", armMotor.getCurrentPosition()/ARM_TICKS_PER_DEGREE);
+            telemetry.addData("ArmPosTarget:", armPosition/ARM_TICKS_PER_DEGREE);
+            //telemetry.addData("ArmPosFF:", armPositionFudgeFactor);
+            //telemetry.addData("PidError:", ArmPID.getError());
+            //telemetry.addData("KdTerm:", ArmPID.getKdTerm());
+            //telemetry.addData("KdTerm:", ArmPID.getKdTerm());
+
             telemetry.update();
+            //if ((armMotor.getCurrentPosition() > armPosition) && (update == true)) {
+            //    update = false;
+            //    telemetry.update();
+            //}
 
 
         }
+
     }
 }

@@ -36,9 +36,9 @@ import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
-@Autonomous(name="FTC Starter Kit Autonomous Robot (INTO THE DEEP)", group="Robot")
+@Autonomous(name="FTC 21115 Into The Deep Autonomous", group="Robot")
 //@Disabled
-public class ConceptGoBildaStarterKitRobotAutonomous_IntoTheDeep extends LinearOpMode
+public class Team21115RobotAutonomous_IntoTheDeep extends LinearOpMode
 {
     MecanumDrive drive = new MecanumDrive();
     public DcMotor  armMotor    = null;
@@ -67,7 +67,7 @@ public class ConceptGoBildaStarterKitRobotAutonomous_IntoTheDeep extends LinearO
         leftFront = hardwareMap.get(DcMotor.class, "left_front_drive");
         rightFront = hardwareMap.get(DcMotor.class, "right_front_drive");
         wrist  = hardwareMap.get(Servo.class, "wrist");
-        armMotor = hardwareMap.get(DcMotor.class, "right_front_drive"); //hardwareMap.get(DcMotor.class, "left_arm");
+        armMotor = hardwareMap.get(DcMotor.class, "left_arm");
         armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         ((DcMotorEx) armMotor).setCurrentAlert(5, CurrentUnit.AMPS);
         armMotor.setTargetPosition(0);
@@ -98,17 +98,15 @@ public class ConceptGoBildaStarterKitRobotAutonomous_IntoTheDeep extends LinearO
 
         waitForStart();
 
-        while (opModeIsActive()) {
+      /*  while (opModeIsActive()) {
             if (TestVar == true) {
                 TestVar =false;
 
-                //turnToPID(40.0);
                 drive(2000, 2000, 0.5);
                 turnPID(-90.0);
             }
             telemetry.addData("Heading", getHeading(AngleUnit.DEGREES));
-            //telemetry.update();
-        }
+        }  /*
         /*
         while (opModeIsActive()) {
             if (TestVar==true)
@@ -245,141 +243,6 @@ public class ConceptGoBildaStarterKitRobotAutonomous_IntoTheDeep extends LinearO
     }
 
 
-
-
-
-
-
-    private void turnRight(double targetAngle,double speed)
-    {
-        double CurrentHeading;
-        double error;
-        boolean NeedToCrossZero = false;
-
-        CurrentHeading = getHeading(AngleUnit.DEGREES);
-
-        if (CurrentHeading >= targetAngle)
-        {
-            NeedToCrossZero = true;
-        }
-
-        while ((CurrentHeading < targetAngle) || (NeedToCrossZero == true))
-        {
-            leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            rightFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            leftRear.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            rightRear.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-            error = targetAngle - CurrentHeading;
-
-/*            if ((NeedToCrossZero == false) && (error < 30))
-            {
-                leftRear.setPower(speed*(error/80));
-                leftFront.setPower(speed*(error/80));
-                rightRear.setPower(-speed*(error/80));
-                rightFront.setPower(-speed*(error/80));
-            }
-            else*/
-            {
-                leftRear.setPower(speed);
-                leftFront.setPower(speed);
-                rightRear.setPower(-speed);
-                rightFront.setPower(-speed);
-            }
-
-            telemetry.addData("Heading", getHeading(AngleUnit.DEGREES));
-            telemetry.addData("speed", speed);
-            telemetry.update();
-
-            CurrentHeading = getHeading(AngleUnit.DEGREES);
-
-            if ((NeedToCrossZero == true) && (CurrentHeading < targetAngle))
-            {
-                NeedToCrossZero = false;
-            }
-
-        }
-
-        leftRear.setPower(0);
-        leftFront.setPower(0);
-        rightRear.setPower(0);
-        rightFront.setPower(0);
-
-        telemetry.addData("Heading", getHeading(AngleUnit.DEGREES));
-        telemetry.addData("speed", 0);
-        telemetry.update();
-    }
-
-    private void turnLeft(double targetAngle,double speed)
-    {
-        double CurrentHeading;
-        boolean NeedToCrossZero = false;
-        double error;
-
-        CurrentHeading = getHeading(AngleUnit.DEGREES);
-
-        if (CurrentHeading <= targetAngle)
-        {
-            NeedToCrossZero = true;
-        }
-
-        while ((CurrentHeading > targetAngle) || (NeedToCrossZero == true))
-        {
-            leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            rightFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            leftRear.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            rightRear.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-            error = CurrentHeading - targetAngle;
-
-/*            if ((NeedToCrossZero == false) && (error < 30))
-            {
-                leftRear.setPower(-speed*(error/80));
-                leftFront.setPower(-speed*(error/80));
-                rightRear.setPower(speed*(error/80));
-                rightFront.setPower(speed*(error/80));
-            }
-            else*/
-            {
-                leftRear.setPower(-speed);
-                leftFront.setPower(-speed);
-                rightRear.setPower(speed);
-                rightFront.setPower(speed);
-            }
-
-            telemetry.addData("Heading", getHeading(AngleUnit.DEGREES));
-            telemetry.addData("speed", speed);
-            telemetry.update();
-
-            CurrentHeading = getHeading(AngleUnit.DEGREES);
-
-            if ((NeedToCrossZero == true) && (CurrentHeading > targetAngle))
-            {
-                NeedToCrossZero = false;
-            }
-
-        }
-
-        leftRear.setPower(0);
-        leftFront.setPower(0);
-        rightRear.setPower(0);
-        rightFront.setPower(0);
-
-        telemetry.addData("Heading", getHeading(AngleUnit.DEGREES));
-        telemetry.addData("speed", 0);
-        telemetry.update();
-    }
-
-    private void ResetEncoders()
-    {
-        leftRear.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rightRear.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rightFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        leftpos = 0;
-        rightpos = 0;
-    }
 
 }
 
