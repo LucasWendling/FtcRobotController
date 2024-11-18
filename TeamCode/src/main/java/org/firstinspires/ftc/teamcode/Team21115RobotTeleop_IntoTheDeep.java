@@ -110,6 +110,7 @@ public class Team21115RobotTeleop_IntoTheDeep extends LinearOpMode {
     final double ARM_WINCH_ROBOT           = 1  * ARM_TICKS_PER_DEGREE;
     final int LINEARSLIDE_IN            = 5;
     final int LINEARSLIDE_OUT           = 2450;
+    final int LINEARSLIDE_COLLECT_OUT   = 1000;
     boolean buttonIsReleased = true;
     /* Variables to store the speed the intake servo should be set at to intake, and deposit game elements. */
     final double INTAKE_COLLECT    = -1.0;
@@ -135,6 +136,8 @@ public class Team21115RobotTeleop_IntoTheDeep extends LinearOpMode {
     @Override
     public void runOpMode() {
         double armPower=0;
+        boolean CanLatchNewFF = true;
+        double PermFudgeFactor = 0.0;
 
         drive.init(hardwareMap);
         /* Define and Initialize Motors */
@@ -215,6 +218,22 @@ public class Team21115RobotTeleop_IntoTheDeep extends LinearOpMode {
                         linearSlide.setPower(1.0);
                     }
                 }
+
+                if ((wrist.getPosition()== WRIST_FOLDED_OUT) && (armPosition== ARM_COLLECT))
+                {
+                    if ((linearSlide.getTargetPosition() == LINEARSLIDE_COLLECT_OUT ) && !linearSlide.isBusy())
+                    {
+                        linearSlide.setTargetPosition( LINEARSLIDE_IN);
+                        linearSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                        linearSlide.setPower(1.0);
+                    }
+                    else if (!linearSlide.isBusy())
+                    {
+                        linearSlide.setTargetPosition(LINEARSLIDE_COLLECT_OUT);
+                        linearSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                        linearSlide.setPower(1.0);
+                    }
+                }
             }
 
             else if (gamepad1.start)
@@ -235,7 +254,7 @@ public class Team21115RobotTeleop_IntoTheDeep extends LinearOpMode {
                     /* Try below code */
                     linearSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
                 }
-                else if (linearSlide.getTargetPosition() == LINEARSLIDE_OUT)
+                else if ((linearSlide.getTargetPosition() == LINEARSLIDE_OUT) || (linearSlide.getTargetPosition() == LINEARSLIDE_COLLECT_OUT))
                 {
                     linearSlide.setPower(0.5);
                 }
@@ -250,6 +269,20 @@ public class Team21115RobotTeleop_IntoTheDeep extends LinearOpMode {
             The FUDGE_FACTOR is the number of degrees that we can adjust the arm by with this function. */
 
             armPositionFudgeFactor = FUDGE_FACTOR * (gamepad1.right_trigger + (-gamepad1.left_trigger));
+            if ((gamepad1.a) && (CanLatchNewFF ==true))
+            {
+                PermFudgeFactor += armPositionFudgeFactor;
+                armPositionFudgeFactor = 0;
+                CanLatchNewFF = false;
+            }
+            else if ((armPositionFudgeFactor != 0) && (CanLatchNewFF ==false))
+            {
+                armPositionFudgeFactor = 0;
+            }
+            else if ((armPositionFudgeFactor == 0) && (CanLatchNewFF ==false))
+            {
+                CanLatchNewFF = true;
+            }
 
 
             if(gamepad1.right_bumper)
@@ -307,7 +340,7 @@ public class Team21115RobotTeleop_IntoTheDeep extends LinearOpMode {
                 //armPosition = 212 * 19.7924893140647;
             }
 
-            armPower = ArmPID.update((armPosition+armPositionFudgeFactor), armMotor.getCurrentPosition());
+            armPower = ArmPID.update((armPosition+armPositionFudgeFactor + PermFudgeFactor), armMotor.getCurrentPosition());
 
             if (armPosition == ARM_WINCH_ROBOT)
             {
@@ -341,10 +374,6 @@ public class Team21115RobotTeleop_IntoTheDeep extends LinearOpMode {
             //telemetry.addData("KdTerm:", ArmPID.getKdTerm());
 
             telemetry.update();
-            //if ((armMotor.getCurrentPosition() > armPosition) && (update == true)) {
-            //    update = false;
-            //    telemetry.update();
-            //}
 
 
         }
