@@ -39,7 +39,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
 import java.util.concurrent.TimeUnit;
 
-@Autonomous(name="FTC 21115 Into The Deep Autonomous 1", group="Robot")
+@Autonomous(name="FTC 21115 Into The Deep Autonomous Basket", group="Robot")
 //@Disabled
 public class Team21115RobotAutonomous_Basket extends LinearOpMode {
     MecanumDrive drive = new MecanumDrive();
