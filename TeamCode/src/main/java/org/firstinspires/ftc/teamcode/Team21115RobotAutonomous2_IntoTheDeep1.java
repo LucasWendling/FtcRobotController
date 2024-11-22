@@ -47,26 +47,37 @@ public class Team21115RobotAutonomous2_IntoTheDeep1 extends LinearOpMode {
     public DcMotor armMotor = null;
     public Servo wrist = null;
     public CRServo intake = null;
-    public boolean TestVar = true;
-    final double ARM_COLLAPSED_INTO_ROBOT = 0;
     private DcMotor leftRear;
     private DcMotor rightRear;
     private DcMotor leftFront;
     private DcMotor rightFront;
     private IMU imu;
-    double armPosition = (int) ARM_COLLAPSED_INTO_ROBOT;
+
+    /* Intake constants */
     final double INTAKE_COLLECT = -1.0;
     final double INTAKE_OFF = 0.0;
     final double INTAKE_DEPOSIT = 0.5;
+
+    /* Wrist constants */
     final double WRIST_FOLDED_OUT = 0.19;
+    final double WRIST_FOLDED_IN = 0.55;
+
+    /* Arm constants */
+    final double ARM_COLLAPSED_INTO_ROBOT = 0;
     final double ARM_TICKS_PER_DEGREE = 19.7924893140647 * 117.0 / 60.0;  //Adjustment for new motor
     final double ARM_SCORE_SPECIMEN = 150 * ARM_TICKS_PER_DEGREE;
-    final double WRIST_FOLDED_IN = 0.55;
+
+    /* Linear Slide constants */
     final int LINEARSLIDE_IN = 5;
     final int LINEARSLIDE_OUT = 2450;
     final int LINEARSLIDE_COLLECT_OUT = 1000;
+
+    /* Drive Motor position variables */
     private int leftpos;
     private int rightpos;
+
+    /* Arm variables */
+    double armPosition = (int) ARM_COLLAPSED_INTO_ROBOT;
     ArmPIDController ArmPID = new ArmPIDController(0.015,0.0,0.0, 0.15);
 
 
@@ -74,6 +85,8 @@ public class Team21115RobotAutonomous2_IntoTheDeep1 extends LinearOpMode {
     public void runOpMode()
     {
         double armPower=0;
+
+        /* Hardware Mapping */
         imu = hardwareMap.get(IMU.class, "imu");
         intake = hardwareMap.get(CRServo.class, "intake");
         leftRear = hardwareMap.get(DcMotor.class, "left_rear_drive");
@@ -83,67 +96,60 @@ public class Team21115RobotAutonomous2_IntoTheDeep1 extends LinearOpMode {
         wrist  = hardwareMap.get(Servo.class, "wrist");
         armMotor = hardwareMap.get(DcMotor.class, "left_arm");
         linearSlide = hardwareMap.dcMotor.get("linear_slide");
+
+        /* Linear slide configuration */
         linearSlide.setDirection(DcMotorSimple.Direction.REVERSE);
         linearSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        /* Arm Motor configuration */
         armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         ((DcMotorEx) armMotor).setCurrentAlert(5, CurrentUnit.AMPS);
-        //armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        //armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-
-        leftRear.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rightRear.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        rightFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
+        /* Initialize Drive Motors */
+        ResetEncoders();
         leftRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
         leftRear.setDirection(DcMotorSimple.Direction.REVERSE);
         leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        leftpos = 0;
-        rightpos = 0;
-
+        /* Initialize IMU */
         RevHubOrientationOnRobot RevOrientation = new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.UP, RevHubOrientationOnRobot.UsbFacingDirection.FORWARD);
         imu.initialize(new IMU.Parameters(RevOrientation));
 
+        /* Command wrist to starting position */
         wrist.setPosition(WRIST_FOLDED_IN);
 
         waitForStart();
 
+        /* Drive away from wall */
         drive(550, 550, 0.50);
-
+        /* Turn towards basket */
         turnToPID(270);
 
+        /* Drive to basket */
         ResetEncoders();
         drive(2500, 2500, 0.50);
 
+        /* Turn to square up to basket */
         turnToPID(235);
 
+        /* Fold out wrist */
         wrist.setPosition(WRIST_FOLDED_OUT);
 
+        /* Move Arm into scoring angle */
         armPosition = ARM_SCORE_SPECIMEN;
 
-        armPower = ArmPID.update((armPosition), armMotor.getCurrentPosition());
-
-        armMotor.setPower(armPower);
-
-        while (Math.abs(ArmPID.getError()) > 2 * ARM_TICKS_PER_DEGREE)
-        {
+        do {
             armPower = ArmPID.update((armPosition), armMotor.getCurrentPosition());
             armMotor.setPower(armPower);
-
-            telemetry.addData("ArmError", armPower);
-            telemetry.update();
-        }
+        } while (Math.abs(ArmPID.getError()) > 2 * ARM_TICKS_PER_DEGREE);
         armMotor.setPower(0.0);
 
-
+        /* Move Linear Slide into top basket scoring position */
         linearSlide.setTargetPosition(LINEARSLIDE_OUT);
         linearSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         linearSlide.setPower(1.0);
@@ -152,16 +158,20 @@ public class Team21115RobotAutonomous2_IntoTheDeep1 extends LinearOpMode {
         {}
         linearSlide.setPower(0.1);
 
+        /* Move closer to basket */
         ResetEncoders();
         drive(200,200,0.50);
 
+        /* Deposit sample into top basket */
         intake.setPower(INTAKE_DEPOSIT);
         timeDelay(1000);
         intake.setPower(INTAKE_OFF);
 
+        /* Move away from basket so slide doesn't hit basket when retracting */
         ResetEncoders();
         drive(-200,-200,0.50);
 
+        /* Retract slide */
         linearSlide.setTargetPosition(LINEARSLIDE_IN);
         linearSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         linearSlide.setPower(0.5);
@@ -170,62 +180,30 @@ public class Team21115RobotAutonomous2_IntoTheDeep1 extends LinearOpMode {
         {}
         linearSlide.setPower(0.0);
 
+        /* Move Arm back to starting position */
         armPosition = ARM_COLLAPSED_INTO_ROBOT;
 
-        armPower = ArmPID.update((armPosition), armMotor.getCurrentPosition());
-        armMotor.setPower(armPower);
-
-        telemetry.addData("ArmError", ArmPID.getError());
-        telemetry.update();
-
-        while (Math.abs(ArmPID.getError()) > 10)
-        {
+        do {
             armPower = ArmPID.update(armPosition, armMotor.getCurrentPosition());
             armMotor.setPower(armPower);
-
-            telemetry.addData("ArmError", ArmPID.getError());
-            telemetry.addData("ArmPower", armPower);
-            telemetry.update();
-        }
+        } while (Math.abs(ArmPID.getError()) > 10);
         armMotor.setPower(0.0);
 
-
+        /* Turn back toward observation zone */
         turnToPID(90);
 
+        /* Drive toward observation zone */
         ResetEncoders();
         drive(4300, 4300,0.60);
 
+        /* Turn to face observation zone */
         turnToPID(180);
 
+        /* Drive into observation zone to end autonomous */
         ResetEncoders();
         drive(500,500,0.50);
 
-
-
-
-        //
-
-        //turnToPID(180);
-
-        //ResetEncoders();
-        //drive(300, 300, 0.50);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        telemetry.addLine("Done");
+        telemetry.addLine("Autonomous Done");
         telemetry.update();
     }
 
@@ -261,7 +239,6 @@ public class Team21115RobotAutonomous2_IntoTheDeep1 extends LinearOpMode {
         telemetry.update();
          while (opModeIsActive() && leftRear.isBusy() && rightRear.isBusy()) ;
          while (opModeIsActive() && leftFront.isBusy() && rightFront.isBusy()) ;
-     //..   idle();
     }
 
     public void ResetEncoders()
@@ -300,41 +277,28 @@ public class Team21115RobotAutonomous2_IntoTheDeep1 extends LinearOpMode {
         leftRear.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightRear.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
+        /* Call this to update initial error term */
         motorPower = pid.update(getHeading(AngleUnit.DEGREES));
 
         // Checking lastSlope to make sure that it's not oscillating when it quits
-        //while ((Math.abs(targetAngle - getHeading(AngleUnit.DEGREES)) > 1) || (Math.abs(targetAngle - getHeading(AngleUnit.DEGREES)) <-359) || pid.getLastSlope() > 0.75)
         while ((Math.abs(pid.getError()) > 2) || pid.getLastSlope() > 0.75)
         {
             motorPower = pid.update(getHeading(AngleUnit.DEGREES));
-
 
             leftRear.setPower(motorPower);
             leftFront.setPower(motorPower);
             rightRear.setPower(-motorPower);
             rightFront.setPower(-motorPower);
 
-            telemetry.addData("target:", targetAngle);
-            telemetry.addData("heading:", getHeading(AngleUnit.DEGREES));
-            //telemetry.addData("time:", pid.getLastTime());
-            //telemetry.addData("error:", pid.getError());
-            telemetry.addData("LastSlope", pid.getLastSlope());
-            telemetry.addData("DeltaTime:", pid.getDeltaTime());
-            telemetry.addData("DeltaError:", pid.getDeltaError());
-            //telemetry.addData("KpTerm:", pid.getKpTerm());
-            //telemetry.addData("KiTerm:", pid.getKiTerm());
-            //telemetry.addData("KdTerm:", pid.getKdTerm());
+            telemetry.addData("Turn Target:", targetAngle);
+            telemetry.addData("Turn Heading:", getHeading(AngleUnit.DEGREES));
+            telemetry.addData("Turn Error:", pid.getError());
             telemetry.update();
-
-
         }
         leftRear.setPower(0.0);
         leftFront.setPower(0.0);
         rightRear.setPower(0.0);
         rightFront.setPower(0.0);
     }
-
-
-
 }
 
