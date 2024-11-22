@@ -57,8 +57,8 @@ public class TurnPIDController {
         lastError = error;
         lastTime = timer.milliseconds();
 
-        double motorPower = 0.03 * Math.signum(error)
-                + 0.97 * Math.tanh(kP * error + kI * accumulatedError - kD * slope);
+        double motorPower = 0.08 * Math.signum(error)
+                + 0.92 * Math.tanh(kP * error + kI * accumulatedError - kD * slope);
 
         KpTerm = kP * error;
         KiTerm = kI * accumulatedError;
